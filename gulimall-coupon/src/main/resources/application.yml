@@ -3,7 +3,7 @@ spring:
   datasource:
     username: root
     password: 1234567890
-    url: jdbc:mysql://localhost:3306/gulimall_sms
+    url: jdbc:mysql://localhost:3306/gulimall_sms?useUnicode=true&characterEncoding=utf8&useSSL=false&&serverTimezone=CST
     driver-class-name: com.mysql.jdbc.Driver
 
 

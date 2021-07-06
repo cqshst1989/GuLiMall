@@ -2,7 +2,7 @@ package com.taoji666.gulimall.gulimallproduct;
 
 import com.taoji666.gulimall.gulimallproduct.entity.BrandEntity;
 import com.taoji666.gulimall.gulimallproduct.service.BrandService;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
