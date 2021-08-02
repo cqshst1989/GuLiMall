@@ -2,12 +2,63 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: test_route
-          uri: https://www.baidu.com
-          predicates:
-            - Query=url,baidu #按照参数路由，如果请求体参数带有baidu，就去百度
+#        - id: test_route
+#          uri: https://www.baidu.com
+#          predicates:
+#            - Query=url,baidu
+#
+#        - id: qq_route
+#          uri: https://www.qq.com
+#          predicates:
+#            - Query=url,qq
 
-        - id: qq_route
-          uri: https://www.qq.com
+        - id: product_route
+          uri: lb://gulimall-product
           predicates:
-            - Query=url,qq
+            #再映射一个hello请求来测试 从网关 到product hello服务的性能。/hello没得过滤
+            - Path=/api/product/**,/hello
+          filters:
+            - RewritePath=/api/(?<segment>.*),/$\{segment}
+
+        - id: third_party_route
+          uri: lb://gulimall-third-party
+          predicates:
+            - Path=/api/thirdparty/**
+          filters:
+            - RewritePath=/api/thirdparty/(?<segment>.*),/$\{segment}
+
+        - id: member_route
+          uri: lb://gulimall-member
+          predicates:
+            - Path=/api/member/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/$\{segment}
+
+        #仓库路由
+        - id: ware_route
+          uri: lb://gulimall-ware
+          predicates:
+            - Path=/api/ware/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/$\{segment}
+
+        - id: admin_route
+          uri: lb://renren-fast
+          predicates:
+            - Path=/api/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/renren-fast/$\{segment}
+
+
+
+  ## 前端项目，/api
+## http://localhost:88/api/captcha.jpg   http://localhost:8080/renren-fast/captcha.jpg
+## http://localhost:88/api/product/category/list/tree http://localhost:10000/product/category/list/tree
+
+        #设置host，只准通过nginx服务器来访问网关，不允许直接访问网关
+        #这个域名放到最后面，否则会影响网关转发给api（接口）的服务
+        #这里是请求页面，前面是请求服务api（某个功能）
+        - id: gulimall_host_route
+            uri: lb://gulimall-product #直接访问路径，默认就是去主页
+            predicates:
+              - Host=**.gulimall.com #host：只有指定的nginx主机才能路由去/gulimall-product

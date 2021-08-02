@@ -1,15 +1,40 @@
 spring:
   datasource:
     username: root
-    password: 1234567890
-    url: jdbc:mysql://localhost:3306/gulimall_pms?useUnicode=true&characterEncoding=utf8&useSSL=false&&serverTimezone=CST
+    password: root
+    url: jdbc:mysql://192.168.56.10:3306/gulimall_pms
     driver-class-name: com.mysql.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+
+  #统一全局配置日期显示格式，代码
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  thymeleaf:
+    cache: false #关闭优先加载缓存，为了顺利配合使用devtools热部署功能，可以在开发期间才能看到实时效果
+    prefix:  #配置视图前缀，如果controller返回的不是json而是字符串，springboot就会根据这个前缀找返回的视图
+
+  redis:
+    host: 127.0.0.1 #redis服务器所在的ip地址，写docker虚拟机的地址
+    port: 6379 #redis默认端口为6379，不写也是6379
+
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:
     db-config:
       id-type: auto
-
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 server:
   port: 10000
+
+#将com.atguigu.gulimall目录下的日志级别都调成debug级别，这样运行的时候，可以看到debug日志
+logging:
+  level:
+    com.atguigu.gulimall: error #只打印错误日志，优化性能方法之一
+

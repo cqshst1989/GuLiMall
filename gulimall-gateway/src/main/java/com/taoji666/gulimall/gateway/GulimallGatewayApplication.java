@@ -5,8 +5,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
+
+/**
+ * 1、开启服务注册发现
+ *  (配置nacos的注册中心地址)
+ * 2、编写网关配置文件
+ */
+
 @EnableDiscoveryClient
-//引入common工程的时候，引入了mybatis依赖，但是又没配置数据源，不排除掉会报错。也可以用maven的exclude排除
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 public class GulimallGatewayApplication {
 

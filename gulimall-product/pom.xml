@@ -12,12 +12,12 @@
     <artifactId>gulimall-product</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>gulimall-product</name>
-    <description>Demo project for Spring Boot</description>
+    <description>谷粒商城-商品服务</description>
+
     <properties>
         <java.version>11</java.version>
         <spring-cloud.version>Greenwich.SR3</spring-cloud.version>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -41,7 +41,52 @@
             <scope>test</scope>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>com.aliyun.oss</groupId>-->
+<!--            <artifactId>aliyun-sdk-oss</artifactId>-->
+<!--            <version>3.5.0</version>-->
+<!--        </dependency>-->
+
+        <!-- 模板引擎 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+       <!-- 热部署工具，有了它，就可以让项目不重新启动，也能立刻读取thymeleaf页面修改后的值
+        optional=true，当其他项目依赖本项目时，不传递这个依赖。这个项devtools就开发时候有用，其他时候也确实没用-->
+<!--为了确保devtools正常工作，一定要先关闭thymeleaf缓存，然后修改完的页面用ctrl+shift+F9(IDEA的Build下可以看到)重新自动编译下。然后就可以去web浏览器刷新看效果了-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 引入redis做缓存，挡在微服务前面 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <exclusions>
+                <!--为什么要排除lettuce
+                1)springboot2.0以后默认使用lettuce作为操作redis的客户端。它使用netty进行网络通信
+                2)lettuce的bug导致netty堆外内存溢出，netty如果没有指定堆外内存,默认使用-Xmx300m.
+                可以通过-Dio.netty.maxDirectMemory进行设置（改源码）
+                解决方案：不能使用-Dio.netty.maxDirectMemory只去调大堆外内存（这样只是延缓异常）
+                  1)、升级Lettuce客户端。 2)、切换使用jedis（暂时使用这招）-->
+                <exclusion>
+                    <groupId>io.lettuce</groupId>
+                    <artifactId>lettuce-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+<!--        替代上面被排除的lettuce-->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+
+
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

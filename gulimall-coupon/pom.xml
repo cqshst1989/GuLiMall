@@ -12,11 +12,13 @@
     <artifactId>gulimall-coupon</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>gulimall-coupon</name>
-    <description>Demo project for Spring Boot</description>
+    <description>谷粒商城-优惠卷服务</description>
+
     <properties>
         <java.version>11</java.version>
         <spring-cloud.version>Greenwich.SR3</spring-cloud.version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.taoji666.gulimall</groupId>
@@ -38,6 +40,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
