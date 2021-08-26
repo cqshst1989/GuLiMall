@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.taoji666.gulimall.product.dao.SkuSaleAttrValueDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.taoji666.gulimall.product.entity.SkuSaleAttrValueEntity" id="skuSaleAttrValueMap">
+        <result property="id" column="id"/>
+        <result property="skuId" column="sku_id"/>
+        <result property="attrId" column="attr_id"/>
+        <result property="attrName" column="attr_name"/>
+        <result property="attrValue" column="attr_value"/>
+        <result property="attrSort" column="attr_sort"/>
+    </resultMap>
+
+
+    <resultMap id="skuItemSaleAttrVo" type="com.taoji666.gulimall.product.vo.SkuItemSaleAttrVo">
+        <result column="attr_id" property="attrId"></result>
+        <result column="attr_name" property="attrName"></result>
+        <collection property="attrValues" ofType="com.taoji666.gulimall.product.vo.AttrValueWithSkuIdVO">
+            <result column="attr_value" property="attrValue"></result>
+            <result column="sku_ids" property="skuIds"></result>
+        </collection>
+    </resultMap>
+
+
+    <!--
+    目标是通过spuId找到对应的商品比如  iphone13
+    再通过客户选择的商品属性 颜色 和 版本  确定SKU  iphone13
+
+
+    分析 传入的是spuId
+    1、当前spu有多少sku（pms_sku_info数据表可以清晰看到）， 所有sku又涉及到哪些属性组合
+    组装销售属性。
+     * attr_id  attr_name  attr_value  sku_ids
+     * 9        颜色        白色          12,13,14
+     * 9        颜色        紫色          24,25,26
+     * 9        颜色        红色          21,22,23
+     * 12       版本        128G         9,12,15,18,21,24
+     * 12       版本        256G         10,13,16,19,22,25
+
+     sku_ids 组合了不同列的所有颜色，并且去重。   mysql就只能做到这样了，最后在外面直接前端的js来做吧
+     * */
+        }
+        名字是ssav.attr_id 太长了，因此起别名为attr_id
+
+        group_concat：根据分组来将将多个字符串连接成一个字符串，并且用,隔开
+
+        GroupBY按照 id name value 来计算（group_concat） pms_sku_info表中的 sku_id ，计算出的结果聚合在一个单元格里，并且去重
+
+        group by 3个字段，3个字段作为一个整体，这样只要三个里面有一个不一样，就是独立的一行
+        如果只group by 1个字段，  比如只group by id  那么就只有9和 12 了。 sku_ids也会变得更多，不符合要求
+        -->
+
+    <select id="getSaleAttrBySpuId" resultMap="skuItemSaleAttrVo">
+        SELECT
+            ssav.attr_id attr_id,
+            ssav.attr_name attr_name,
+            ssav.attr_value,
+            group_concat( DISTINCT info.sku_id ) sku_ids
+        FROM
+            pms_sku_info info
+                LEFT JOIN pms_sku_sale_attr_value ssav ON ssav.sku_id = info.sku_id
+        WHERE
+            info.spu_id = #{spuId}
+        GROUP BY
+            ssav.attr_id,
+            ssav.attr_name,
+            ssav.attr_value
+    </select>
+
+    <select id="getSkuSaleAttrValuesAsStringList" resultType="java.lang.String">
+        /*CONCAT( attr_name, "：", attr_value ) 合并 name 和 value 两列 中间用冒号 隔开
+          而且，只查了一项*/
+        SELECT
+            CONCAT( attr_name, "：", attr_value )
+        FROM
+            pms_sku_sale_attr_value
+        WHERE
+            sku_id = #{skuId}
+    </select>
+
+
+</mapper>

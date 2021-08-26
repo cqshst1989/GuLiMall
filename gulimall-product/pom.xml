@@ -61,6 +61,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!--spring配置文件类的提示工具，加不加不影响项目，只是加了自己写配置类相关的配置文件application的时候，会有提示，要不就要自己敲完，很麻烦-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 引入redis做缓存，挡在微服务前面 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -83,6 +90,28 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
         </dependency>
+        <!-- 以后使用redisson作为所有分布式锁，分布式对象等功能框架-->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+<!--Spring的缓存只是抽取了缓存的公共代码，实际存储缓存的数据库还是redis，前面已经引入-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!--解决session跨域问题，本product微服务中的index.html 想去使用 auth微服务中的域对象，永以展示 会员名等信息
+            product微服务已经通过spring-session将域对象存入redis中，现在从redis取出-->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+
+
+
+
 
 
     </dependencies>

@@ -1,0 +1,155 @@
+//GET gulimall_product/_search  MallSearchServiceImpl方法从es中查询数据的es原生写法,DSL查询
+{
+  "query": {
+    "bool": {  // 复合语句可以合并，任何其他查询语句，包括复合语句。这也就意味着，复合语句之间可以互相嵌套，可以表达非常复杂的逻辑。
+      "must": [ //必须达到must所列举的所有条件
+        {
+          "match": {   //match即全文检索，对检索字段进行分词匹配，会按照响应的评分 _score 排序，原理是倒排索引。
+            "skuTitle": "华为"
+          }
+        }
+      ],
+      "filter": [ //filter 对结果进行过滤，但不计算相关性得分。
+        {
+          "term": { //非文本字段，使用term来精确检索  ps:文本用match精确检索
+            "catalogId": "225"
+          }
+        },
+        {
+          "terms": { //精确匹配多个brandId
+            "brandId": [ //比如前端请求是1、2、9
+              "1",
+              "2",
+              "9"
+            ]
+          }
+        },
+        {
+          "term": {
+            "hasStock": "false"
+          }
+        },
+        {
+          "range": { //区间查询
+            "skuPrice": {  //比如页面请求查询1000 到 7000 的商品
+              "gte": 1000, //新版ES已经变成了 from 1000 to 7000
+              "lte": 7000
+            }
+          }
+        },
+        {
+          "nested": { //嵌入式查询，在es中（SkuEsModel类中），attrs有内部类
+            "path": "attrs",
+            "query": {
+              "bool": {
+                "must": [
+                  {
+                    "term": {
+                      "attrs.attrId": {
+                        "value": "6"
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "attrs.attrValue": [
+                        "麒麟9000",
+                        "骁龙888"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  //以上查的结果，都是返回SkuEsModel，和那会存进去的时候一样
+
+
+  "sort": [  //居然和bool平级，但是在bool后，那就代表前面查出来的再来排序
+    {
+      "skuPrice": {
+        "order": "desc"  //怎样排序是根据页面请求决定的
+      }
+    }
+  ],
+
+
+  "from": 0,  //分页，from从哪一页开始  0代表第一页
+  "size": 2,  //每页多少个数据，每页2个数据   （主要是数据库样本太小，要不每页16个）
+  "highlight": {  //高亮  类似写html<b style='color:red'>前面查到的skuTitle的值</b>
+    "fields": {"skuTitle": {}},  //让前面bool中查到的skuTitle的值  来 高亮
+    "pre_tags": "<b style='color:red'>", //前置标签，类似写html 的样式属性
+    "post_tags": "</b>" //html的后置标签
+  },
+
+
+  "aggs": {  //这里开始聚合分析前面查到的值   分析SkuEsModel对象product的值  规则是根据pms_brand、pms_category、pms_attr三个数据表的值分别聚合
+    "brandAgg": {  //给这个聚合取名字   刚好就是SkuEsModel中 pms_brand数据表的ID，Name，Logo（Img）,自增主键ID来大聚合
+      "terms": {
+        "field": "brandId", //聚合字段为es中的brandID，即SkuEsModel类的brandId
+        "size": 10 //聚合后，取前10个数据
+      },
+      "aggs": {  //brandAgg的子聚合——品牌名聚合
+        "brandNameAgg": {
+          "terms": {
+            "field": "brandName", //聚合字段为es中的brandName
+            "size": 1  //聚合后，取前1个数据：一看数据库就知道，只能是1，因为一个品牌肯定只有一个名字，小米就是小米，华为就是华为
+          }
+        },
+
+        "brandImgAgg": { //brandAgg的子聚合——品牌图片聚合  pms_brand数据表中的Logo
+          "terms": {
+            "field": "brandImg",
+            "size": 1  //一个品牌，对应一个图片，本例中
+          }
+        }
+
+      }
+    },
+    "catalogAgg":{  //分类聚合   SkuEsModel类中和pms_category数据表的相关的 catalogId 和 catalogName
+      "terms": {
+        "field": "catalogId",
+        "size": 10  //聚合后显示前10条数据
+      },
+      "aggs": {
+        "catalogNameAgg": {
+          "terms": {
+            "field": "catalogName",
+            "size": 1  //看数据表容易发现，名字也是唯一
+          }
+        }
+      }
+    },
+    "attrs":{ //pms_attr数据表 并且 attrs属性还有内部类，就会比上面的catalogAgg个多一次子聚合
+      "nested": {  //内部类，因此会有nested 嵌入式
+        "path": "attrs"
+      },
+      "aggs": {  //第一次子聚合，只有1个,看SkuEsModel可以得出attr数据表有关的字段，就这一个，但是他有内部类，内部类涉及3个字段
+        "attrIdAgg": {
+          "terms": {
+            "field": "attrs.attrId",
+            "size": 1  //看数据表容易得知，id是主键，因此唯一
+          },
+          "aggs": {  //子聚合，内部类的字段，用attrs.attrId来聚合
+            "attrNameAgg": {
+              "terms": {
+                "field": "attrs.attrName",
+                "size": 1
+              }
+            },
+            "attrValueAgg": {
+              "terms": {
+                "field": "attrs.attrValue",
+                "size": 50  //一个属性，可能会涉及多种值。比如上市年份，可能轻松有几十个值。看pms_attr数据表容易发现，可以很多行上市年份（attrName)对应不同的2001，0,22
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

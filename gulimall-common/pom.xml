@@ -73,9 +73,37 @@
             <version>2.0.1.Final</version>
         </dependency>
 
+        <!--为了使用阿里云认证服务的工具类HttpUtils的相关依赖,直接去阿里云官网复制，去掉重复的-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.15</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>9.3.7.v20160115</version>
+        </dependency>
+        <!--以上，都是为了HttpUtils-->
+
 
     </dependencies>
-
+    <!--springcloud alibaba  和 springcloud 是两回事，一个有nacos 另一个有OpenFeign-->
     <dependencyManagement>
         <dependencies>
             <dependency>

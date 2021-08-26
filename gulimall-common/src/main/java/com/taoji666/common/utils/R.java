@@ -17,12 +17,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * R就是专门用来 微服务之间， 服务器和前端之间 传递json数据的
  * 返回数据
  *
  * @author Mark sunlightcs@gmail.com
  */
 public class R extends HashMap<String, Object> {
 	private static final long serialVersionUID = 1L;
+
 
 	//自定义方法
 	public R setData(Object data){
@@ -33,10 +35,18 @@ public class R extends HashMap<String, Object> {
 	//用的是alibaba的TypeReference  利用fastjson进行逆转.就是转换前面set进去的data
 	//方法中的泛型，不是类的泛型
 	public <T> T getData(TypeReference<T> typeReference) {
-		Object data = get("data");//data就是put进去的  就单独把R中的 List<SkuHasStockVo>取出来，但是取出来以后数据类型不对，后面转换
-		String s = JSON.toJSONString(data); //Object转换成String
-		T t = JSON.parseObject(s,typeReference); //将String转换成 typeReference 即 List<SkuHasStockVo>
+		Object data = get("data");//data就是put进去的  就单独把R中的 List<SkuHasStockVo>取出来，但是这会数据类型还是Object，后面转换
+		String s = JSON.toJSONString(data); //Object转换成Json版String
+		T t = JSON.parseObject(s,typeReference); //将Json版String转换成 typeReference 即 List<SkuHasStockVo>
 		return t;
+	}
+
+	// 利用fastjson进行反序列化，这里使用key，不具体成data，范围更广
+	public <T> T getData(String key, TypeReference<T> typeReference) {
+		// 默认是map
+		Object data = get(key); //
+		String jsonString = JSON.toJSONString(data);
+		return JSON.parseObject(jsonString, typeReference);
 	}
 
 

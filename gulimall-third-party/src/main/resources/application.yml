@@ -1,0 +1,31 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+    #配置图片存储
+    alicloud:
+      access-key: LTAI4FwvfjSycd1APnuG9bjj
+      secret-key: O6xaxyiWfSIitcOkSuK27ju4hXT5Hl
+      oss:
+        endpoint: oss-cn-beijing.aliyuncs.com
+        bucket: gulimall-hello # 这些都是在controller中的自己代码 要用@value提取的值
+
+      #配置短信验证码
+      sms:
+        host: https://fesms.market.alicloudapi.com #直接照着阿里云抄
+        path: /sms/ #直接照着阿里云抄
+        skin: 1 #样式，阿里云里面选一个中意的
+        sign: 1 #信息模板，还是可以去阿里云里选模板
+        appcode: b0563c23aff8428c97a54d4f7f9e28e5 #需要去阿里云 已购买的服务，复制过来
+
+
+
+
+  application:
+    name: gulimall-third-party
+
+#如果不写端口号，自动配置为8080
+server:
+  port: 30000

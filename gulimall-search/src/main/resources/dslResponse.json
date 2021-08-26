@@ -1,0 +1,105 @@
+//将dsl放进ES查询，得到的结果
+{
+  "took" : 11,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {  //命中的总记录数
+    "total" : {  //总记录数
+      "value" : 4,
+      "relation" : "eq"
+    },
+    "max_score" : 1.0043911,
+    "hits" : [  //嵌套的hits才是命中的具体商品记录
+      {
+        "_index": "gulimall_product",
+        "_type": "_doc",
+        "_id": "1",
+        "_score" : 1.0043911,
+        "_source": {   //这才是真正的对象信息，存进去的SkuEsModel，现在取出的就是这个
+          "attrs": [
+            {
+              "attrId": 15,
+              "attrName": "CPU品牌",
+              "attrValue": "海思"
+            },
+            {
+              "attrId": 16,
+              "attrName": "CPU型号",
+              "attrValue": "麒麟970"
+            }
+          ]
+        }
+      }
+    ]  //命中记录的明细
+  },
+  "aggregations" : {  //聚合信息，
+    "catalog_agg" : {
+      "doc_count_error_upper_bound" : 0,
+      "sum_other_doc_count" : 0,
+      "buckets" : [
+        {
+          "key" : 225,  //响应查的brandId  只有一种分类，就是225
+          "doc_count" : 4,
+          "catalog_name_agg": {
+            "doc_count_error_upper_bound" : 0,
+            "sum_other_doc_count" : 0,
+            "buckets" : [  //涉及到的具体分类    brandName 就是 手机
+              {
+                "key" : "手机",
+                "doc_count" : 4
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "attr_agg" : {
+      "doc_count": 8,
+      "attr_id_agg": {
+        "doc_count_error_upper_bound" : 0,
+        "sum_other_doc_count" : 0,
+        "buckets" : [
+          {
+            "key" : 15,
+            "doc_count" : 4,
+            "attr_name_agg": {
+              "doc_count_error_upper_bound" : 0,
+              "sum_other_doc_count" : 0,
+              "buckets" : [
+                {
+                  "key" : "CPU品牌",
+                  "doc_count" : 4
+                }
+              ]
+            },
+            "attr_value_agg": {
+              "doc_count_error_upper_bound" : 0,
+              "sum_other_doc_count" : 0,
+              "buckets" : [
+                {
+                  "key" : "海思",
+                  "doc_count" : 4,
+                  "attr_name_agg": {
+                    "doc_count_error_upper_bound" : 0,
+                    "sum_other_doc_count" : 0,
+                    "buckets" : [
+                      {
+                        "key" : "CPU品牌",
+                        "doc_count" : 4
+                      }
+                    ]
+                  }
+          }
+          }
+      }
+    }
+
+  }
+
+}

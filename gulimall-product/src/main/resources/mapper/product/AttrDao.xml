@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.taoji666.gulimall.product.dao.AttrDao">
+
+	<!-- 以下已经自动生成好，自行决定是否使用 -->
+    <resultMap type="com.taoji666.gulimall.product.entity.AttrEntity" id="attrMap">
+        <result property="attrId" column="attr_id"/>
+        <result property="attrName" column="attr_name"/>
+        <result property="searchType" column="search_type"/>
+        <result property="valueType" column="value_type"/>
+        <result property="icon" column="icon"/>
+        <result property="valueSelect" column="value_select"/>
+        <result property="attrType" column="attr_type"/>
+        <result property="enable" column="enable"/>
+        <result property="catelogId" column="catelog_id"/>
+        <result property="showDesc" column="show_desc"/>
+    </resultMap>
+
+<!--    select * from `pms_attr` WHERE attr_id IN (?) AND search_type =1-->
+<!--    每个相同attr_id 都有很行，就是一个id有 很多属性，因此需要遍历-->
+
+    <select id="selectSearchAttrIds" resultType="java.lang.Long">
+        SELECT attr_id FROM pms_attr WHERE attr_id IN
+--         需要遍历的集合，这里是传入的形参 属性
+        <foreach collection="attrIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        AND search_type = 1
+    </select>
+
+
+
+
+</mapper>

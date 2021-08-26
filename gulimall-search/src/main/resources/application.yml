@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: gulimall-search
+
+
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+  thymeleaf:
+    cache: false  #开发阶段，关闭缓存，方便使用热启动工具。但是运行阶段，为了提高效率，必须开启缓存
+
+  #配置redis连接信息  只要用redis都要配这个
+  redis:
+    host: 127.0.0.1 #redis所在的docker容器地址
+    port: 6379
+
+  #配置spring-session
+  session:
+    store-type: redis  #将session中的域对象统一存储在redis中
+
+server:
+  port: 12000

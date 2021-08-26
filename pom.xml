@@ -5,6 +5,10 @@
     <groupId>com.taoji666.gulimall</groupId>
     <artifactId>gulimall</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
     <name>gulimall</name>
     <description>聚合服务</description>
     <packaging>pom</packaging>
@@ -19,6 +23,8 @@
         <module>renren-generator</module>
         <module>gulimall-common</module>
         <module>gulimall-search</module>
+        <module>gulimall-auth-server</module>
+        <module>gulimall-cart</module>
 
     </modules>
 

@@ -1,3 +1,11 @@
+# 本项目 host 域名映射
+#192.168.56.10（nginx ip）  gulimall.com
+#192.168.56.10（nginx ip）  search.gulimall.com
+#192.168.56.10（nginx ip）  item.gulimall.com
+#192.168.56.10（nginx ip）  auth.gulimall.com
+#192.168.56.10（nginx ip）  cart.gulimall.com
+#
+
 spring:
   cloud:
     gateway:
@@ -61,4 +69,20 @@ spring:
         - id: gulimall_host_route
             uri: lb://gulimall-product #直接访问路径，默认就是去主页
             predicates:
-              - Host=**.gulimall.com #host：只有指定的nginx主机才能路由去/gulimall-product
+              #host：只有指定的nginx主机才能路由去/gulimall-product 微服务，下面指定了两个可以路由去product微服务的
+              - Host=gulimall.com, item.gulimall.com
+
+        - id: gulimall_search_route
+            uri: lb://gulimall-search #直接访问路径，默认就是去微服务的主页
+            predicates:
+              - Host=search.gulimall.com #search.gulimall的主机 转发给gulimall-search微服务
+
+        - id: gulimall_auth_route
+            uri: lb://gulimall-auth-server #负载均衡到认证微服务
+            predicates:
+              - Host=auth.gulimall.com
+
+        - id: gulimall_cart_route
+            uri: lb://gulimall-cart
+            predicates:
+              - Host=cart.gulimall.com #只接收来自nginx的， 已经配置过该域名就是nginx

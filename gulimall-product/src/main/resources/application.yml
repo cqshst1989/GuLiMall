@@ -8,6 +8,8 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
+  session:
+    store-type: redis #统一使永redis作为spring-session的容器
 
 
   #统一全局配置日期显示格式，代码
@@ -37,4 +39,3 @@ server:
 logging:
   level:
     com.atguigu.gulimall: error #只打印错误日志，优化性能方法之一
-
