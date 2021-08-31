@@ -1,16 +1,13 @@
 package com.taoji666.gulimall.member.controller;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import com.taoji666.gulimall.member.entity.MemberReceiveAddressEntity;
 import com.taoji666.gulimall.member.service.MemberReceiveAddressService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.taoji666.common.utils.PageUtils;
 import com.taoji666.common.utils.R;
@@ -20,9 +17,8 @@ import com.taoji666.common.utils.R;
 /**
  * 会员收货地址
  *
- * @author leifengyang
- * @email leifengyang@gmail.com
- * @date 2019-10-08 09:47:05
+ * @author Taoji
+ * @date 2021-08-23 22:33:12
  */
 @RestController
 @RequestMapping("member/memberreceiveaddress")
@@ -84,6 +80,15 @@ public class MemberReceiveAddressController {
 		memberReceiveAddressService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
+    }
+
+    /**
+     *本方法由订单服务远程调用
+     * 用于查询所有收货人的地址
+     */
+    @RequestMapping("/getAddressByUserId")
+    public List<MemberReceiveAddressEntity> getAddressByUserId(@RequestBody Long userId) {
+        return memberReceiveAddressService.getAddressByUserId(userId);
     }
 
 }

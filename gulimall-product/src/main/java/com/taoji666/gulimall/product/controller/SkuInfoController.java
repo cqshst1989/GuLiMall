@@ -1,16 +1,13 @@
 package com.taoji666.gulimall.product.controller;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Map;
 
 import com.taoji666.gulimall.product.entity.SkuInfoEntity;
 import com.taoji666.gulimall.product.service.SkuInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.taoji666.common.utils.PageUtils;
 import com.taoji666.common.utils.R;
@@ -94,6 +91,13 @@ public class SkuInfoController {
 		skuInfoService.removeByIds(Arrays.asList(skuIds));
 
         return R.ok();
+    }
+
+    //购物车微服务远程调用，用于获取实时价格
+    @GetMapping("/{skuId}/price")
+    public R getPrice(@PathVariable("skuId") Long skuId){
+        SkuInfoEntity byId = skuInfoService.getById(skuId);
+        return R.ok().setData(byId.getPrice().toString());
     }
 
 }

@@ -4,6 +4,7 @@
 #192.168.56.10（nginx ip）  item.gulimall.com
 #192.168.56.10（nginx ip）  auth.gulimall.com
 #192.168.56.10（nginx ip）  cart.gulimall.com
+#192.168.56.10（nginx ip）  order.gulimall.com  订单服务
 #
 
 spring:
@@ -86,3 +87,10 @@ spring:
             uri: lb://gulimall-cart
             predicates:
               - Host=cart.gulimall.com #只接收来自nginx的， 已经配置过该域名就是nginx
+
+        #将主机地址为order.gulimall.com转发至gulimall-order
+        - id: gulimall_order_host
+          uri: lb://gulimall-order
+          predicates:
+            - Host=order.gulimall.com
+

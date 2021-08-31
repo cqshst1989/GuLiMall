@@ -1,6 +1,8 @@
 package com.taoji666.gulimall.cart.vo;
 
 
+import org.springframework.util.CollectionUtils;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -80,7 +82,8 @@ public class CartVo {
         if (!CollectionUtils.isEmpty(items)) {
             for (CartItemVo cartItem : items) {
                 if (cartItem.getCheck()) {
-                    amount = amount.add(cartItem.getTotalPrice()); //当前购物项的价格，在购物项类中，已经用它的getTotalPrice()计算过了
+                    BigDecimal totalPrice = cartItem.getTotalPrice();
+                    amount = amount.add(totalPrice); //当前购物项的价格，在购物项类中，已经用它的getTotalPrice()计算过了
                 }
             }
         }

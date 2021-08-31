@@ -1,5 +1,5 @@
 server:
-  port: 9000
+  port: 9010
 
 spring:
   datasource:
@@ -7,8 +7,54 @@ spring:
     password: root
     url: jdbc:mysql://192.168.56.10:3306/gulimall_oms
     driver-class-name: com.mysql.jdbc.Driver
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+  session:
+    store-type: redis  #spring-session使用的是redis来存储 k v
+
+  rabbitmq:
+    host: 192.168.56.102 #主机所在docker 地址
+    port: 5672 #RabbitMQ默认端口号也是5672
+    #像mysql有数据库的概念并且可以指定用户对库和表等操作的权限。那RabbitMQ呢？RabbitMQ也有类似的权限管理。
+    #在RabbitMQ中可以虚拟消息服务器VirtualHost，每个VirtualHost相当月一个相对独立的RabbitMQ服务器，每个VirtualHost之间是相互隔离的。exchange、queue、message不能互通。
+    # 一般以/开头
+    virtual-host: / #所有人都可以
+
+    #开启发送确认：消息生产者将 消息 发送到 消息代理服务器时，回调确认收到信息
+    #至于如何设置返回的确认信息，参见配置类的initRabbitTemplate
+    publisher-confirms: true
+
+    #开启消息从 代理服务器 到达 队列的确认
+    publisher-returns: true
+    #只要抵达队列，以异步发送优先回调我们这个returnconfirm
+#    至于如何设置返回的确认信息，参见配置类的initRabbitTemplate
+    template:
+      mandatory: true
+    #将默认消费者的自动接收消息，改为手动接收消息后，消息代理服务器再删除消息
+    listener:
+      simple:
+        acknowledge-mode: manual
+
+#RabbitMQ其他的诸如账号密码，都可以使用默认配置
+
+  thymeleaf:
+    cache: false #开发阶段，禁用掉缓存，方便热启动
+
+  application:
+    name: gulimall-order
+
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:
     db-config:
       id-type: auto
+
+gulimall:
+  thread:
+    core-seze: 20
+    max-size: 200
+    keep-alive-time 10

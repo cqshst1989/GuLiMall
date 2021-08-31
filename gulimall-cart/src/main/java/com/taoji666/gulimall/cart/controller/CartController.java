@@ -6,6 +6,7 @@ import com.taoji666.gulimall.cart.vo.CartVo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -28,15 +29,23 @@ public class CartController {
     /**
      * 获取当前用户的购物车商品项
      *
+     *
      * @return
      */
     @GetMapping(value = "/currentUserCartItems")
-    @ResponseBody
+    @ResponseBody //由于是别的微服务调用，因此需要返回json
     public List<CartItemVo> getCurrentCartItems() {
 
         List<CartItemVo> cartItemVoList = cartService.getUserCartItems();
 
         return cartItemVoList;
+    }
+
+    //本方法，由订单微服务调用，获取购物车中的购物项
+    @ResponseBody //转成json返回
+    @RequestMapping("/getCheckedItems")
+    public List<CartItemVo> getCheckedItems() {
+        return cartService.getCheckedItems();
     }
 
     /**
@@ -132,7 +141,8 @@ public class CartController {
 
 
     /**
-     * 改变商品数量
+     * 前端 点击    - 某商品skuId +   上面的+、- 以改变商品的数量
+     * 现在将 skuId 和 商品数量 传来保存进redis
      *
      * @param skuId
      * @param num
@@ -162,5 +172,7 @@ public class CartController {
         return "redirect:http://cart.gulimall.com/cart.html";
 
     }
+
+
 
 }

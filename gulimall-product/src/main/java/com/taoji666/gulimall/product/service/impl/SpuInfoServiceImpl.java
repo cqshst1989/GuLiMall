@@ -392,7 +392,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             //现将获取到的Object转换成List<SkuHasStockVo>
             TypeReference<List<SkuHasStockVo>> typeReference = new TypeReference<List<SkuHasStockVo>>(){};
 
-            stockMap = r.getData(typeReference).stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId,item->item.getHasSstock()));
+            stockMap = r.getData(typeReference).stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId,item->item.getHasStock()));
         }catch (Exception e){
             log.error("库存服务查询异常，原因{}",e);
         }

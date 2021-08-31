@@ -36,6 +36,7 @@ nginx配置好的 /static/ 其他保持不变 本页面的静态资源在login�
         <div class="si_top">
             <p>
                 <span>谷粒商城不会以任何理由要求您转账汇款，谨防诈骗。</span>
+                <!--如果是去支付页面被拦截返回的，这里提示请先登录-->
                 <span style="color: red" th:if="session.msg!=null"><br/>[[${session.msg}]]</span>
             </p>
 

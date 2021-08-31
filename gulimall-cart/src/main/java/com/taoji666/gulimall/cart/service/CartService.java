@@ -63,4 +63,5 @@ public interface CartService {
 
     List<CartItemVo> getUserCartItems();
 
+    List<CartItemVo> getCheckedItems();//选中购物车中的购物项，订单服务里面
 }

@@ -42,6 +42,16 @@ public class WareSkuController {
         //会返回一个崭新的R匿名对象,将查到的vos 暂时存入R的匿名对象，但是返回值有名字，就存入r了
         return R.ok().setData(vos);
     }
+    //上面方法的孪生版，由订单微服务远程调用，由于不想fastjson转换，所以不用R，直接返回
+    @PostMapping(value = "/hasStockNR")
+    public List<SkuHasStockVo> getSkuHasStockNR(@RequestBody List<Long> skuIds) {
+        //新建一个SkuHasStockVo 只要skuId 和 是否有库存
+        //编写getSkuHasStock方法来检查有没有库存
+        List<SkuHasStockVo> vos = wareSkuService.getSkuHasStock(skuIds);
+
+        //不存入R了，直接用
+        return vos;
+    }
 
     /**
      *文档库存系统02、查询商品库存

@@ -261,6 +261,37 @@ public class CartServiceImpl implements CartService {
     }
 
 
+    @Override
+    public List<CartItemVo> getCheckedItems() {
+        //通过线程 从拦截器中，取出用户信息
+        UserInfoTo userInfoTo = CartInterceptor.toThreadLocal.get();
+        if(userInfoTo.getUserId()==null){
+            return null;
+        } else {
+            String cartKey = CART_PREFIX + userInfoTo.getUserId();
+            List<CartItemVo> cartItems = getCartItems(cartKey);
+
+            //获取所有被选中的购物项
+            List<CartItemVo> collect = cartItems.stream().filter(item-> item.getCheck())
+                    .map(item->{
+                        /*
+                        * feign直接获取对象，在网络中 对象 转流 再转回对象，容易失败
+                        * 因此都用R对象，R里面已经内置了 fastjson，可以快速转换各个对象
+                        * */
+                        R price = productFeignService.getPrice(item.getSkuId());
+                        //更新为最新价格
+                        String data = (String) price.get("data");
+                        item.setPrice(new BigDecimal(data));
+                        return item;
+                    }).collect(Collectors.toList());
+            return collect;
+
+            /*List<CartItemVo> cartByKey = getCartByKey(userInfoTo.getUserId().toString());
+            return cartByKey.stream().filter(CartItemVo::getCheck).collect(Collectors.toList());
+*/
+        }
+    }
+
     /**
      * 删除购物项
      *
@@ -268,8 +299,9 @@ public class CartServiceImpl implements CartService {
      */
     @Override
     public void deleteIdCartInfo(Integer skuId) {
-
+        //拿到redis绑好的购物车
         BoundHashOperations<String, Object, Object> cartOps = getCartOps();
+        //直接删除对应的skuId
         cartOps.delete(skuId.toString());
     }
 

@@ -116,7 +116,9 @@
 
                             </li>
                             <li>
+                               <!--父元素来绑定商品skuId，这样方便在1个countOpsBtn方法里，就可以做2个标签的+ - -->
                                 <p th:attr="skuId=${item.skuId}">
+                                    <!--+ - 购物车 都是由`同一个class`绑定-->
                                     <span class="countOpsBtn">-</span>
                                     <!--取出购物车共有多少项-->
                                     <span class="countOpsNum" th:text="${item.count}">5</span>
@@ -179,6 +181,7 @@
         </dl>
     </div>
     <div>
+        <!--点击`删除`按钮  出发单击事件deleteItem() -->
         <button type="button" onclick="deleteItem()">删除</button>
 
     </div>
@@ -780,10 +783,12 @@
         location.href = "http://cart.gulimall.com/checkItem?skuId=" + skuId + "&checked=" + (checked ? 1 : 0);
     });
 
-
+    // + - 购物车都是由.countOpsBtn 绑定
     $(".countOpsBtn").click(function () {
-        const skuId = $(this).parent().attr("skuId");
-        const num = $(this).parent().find(".countOpsNum").text();
+        const skuId = $(this).parent().attr("skuId"); //先获取商品ID
+        const num = $(this).parent().find(".countOpsNum").text();//再获取重新+，-后的商品数量
+        /*ps:数量的增减 是以前js写的，我也不懂啊*/
+        //将修改好的数量，更新进数据库
         location.href = "http://cart.gulimall.com/countItem?skuId=" + skuId + "&num=" + num;
     });
 
