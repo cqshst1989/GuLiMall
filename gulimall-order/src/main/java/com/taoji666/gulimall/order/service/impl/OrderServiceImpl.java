@@ -1,24 +1,29 @@
 package com.taoji666.gulimall.order.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.taoji666.common.constant.CartConstant;
+import com.taoji666.common.exception.NoStockException;
 import com.taoji666.common.to.SkuHasStockVo;
 import com.taoji666.common.utils.R;
 import com.taoji666.common.vo.MemberResponseVo;
+import com.taoji666.gulimall.order.constant.OrderConstant;
 import com.taoji666.gulimall.order.dao.OrderDao;
 import com.taoji666.gulimall.order.entity.OrderEntity;
 import com.taoji666.gulimall.order.entity.OrderItemEntity;
 import com.taoji666.gulimall.order.entity.PaymentInfoEntity;
 import com.taoji666.gulimall.order.feign.CartFeignService;
 import com.taoji666.gulimall.order.feign.MemberFeignService;
+import com.taoji666.gulimall.order.feign.ProductFeignService;
 import com.taoji666.gulimall.order.feign.WareFeignService;
 import com.taoji666.gulimall.order.interceptor.LoginInterceptor;
 import com.taoji666.gulimall.order.service.OrderItemService;
 import com.taoji666.gulimall.order.service.OrderService;
 import com.taoji666.gulimall.order.service.PaymentInfoService;
-import com.taoji666.gulimall.order.vo.MemberAddressVo;
-import com.taoji666.gulimall.order.vo.OrderConfirmVo;
-import com.taoji666.gulimall.order.vo.OrderItemVo;
+import com.taoji666.gulimall.order.to.OrderCreateTo;
+import com.taoji666.gulimall.order.to.SpuInfoTo;
+import com.taoji666.gulimall.order.vo.*;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +33,11 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -140,11 +143,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         //3. 积分  即设置integration属性
         confirmVo.setIntegration(memberResponseVo.getIntegration());
 
-        //5. 总价自动计算
+        //5. 总价自动计算（前端js算，我们就提供好数据即可）
+
         //6. 防重令牌
+        //uuid生成的随机数里面有短横线- 替换掉
         String token = UUID.randomUUID().toString().replace("-", "");
+        //将令牌存入redis，为了redis中的数据美观，都需要前缀，前缀就用常量OrderConstant.USER_ORDER_TOKEN_PREFIX+用户Id，值就是token，过期时间30分钟
         redisTemplate.opsForValue().set(OrderConstant.USER_ORDER_TOKEN_PREFIX + memberResponseVo.getId(), token, 30, TimeUnit.MINUTES);
-        confirmVo.setOrderToken(token);
+        confirmVo.setOrderToken(token);//将防重令牌也存入confirmVo，给前端页面使用，当然是hidden，前端下次提交的时候，就可以带上这个token了
         try {
             //这里要等itemAndStockFuture 和 addressFuture 两个任务都做完后，程序再继续往下走
             CompletableFuture.allOf(itemAndStockFuture, addressFuture).get();
@@ -156,40 +162,57 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         return confirmVo;
     }
 
-    //    @GlobalTransactional
-    @Transactional
+    //提交订单：
+    // 创建订单，验证令牌，验证价格，锁定库存后，返回订单信息
+    /*@GlobalTransactional  高并发不适合用这个，这个会加很多锁，一个一个的下订单会严重影响效率。
+    * 解决办法：消息队列，兔子MQ
+    * */
+
+    @Transactional//(isolation=Isolation.REPEATABLE_READ) 设置事务隔离级别
     @Override
     public SubmitOrderResponseVo submitOrder(OrderSubmitVo submitVo) {
         SubmitOrderResponseVo responseVo = new SubmitOrderResponseVo();
         responseVo.setCode(0);
         //1. 验证防重令牌
+        //先从拦截器里面，拿到令牌
         MemberResponseVo memberResponseVo = LoginInterceptor.loginUser.get();
+        //令牌的 删除 和 对比 必须保证原子性，使用redis自带脚本来完成 对比 和 删除 功能，copy即可
+        //脚本：get一个key，如果刚好等于传过来的参数ARGV，就会删除该KEY，并返回1，如果失败，则返回0
         String script= "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+
+        //执行脚本：即原子验证令牌和删除令牌
         Long execute = redisTemplate.execute(new DefaultRedisScript<>(script,Long.class), Arrays.asList(OrderConstant.USER_ORDER_TOKEN_PREFIX + memberResponseVo.getId()), submitVo.getOrderToken());
+        //脚本返回0 说明验证失败
         if (execute == 0L) {
-            //1.1 防重令牌验证失败
+            //加入错误代码，直接返回。controller发现状态码是失败的，就会重定向到toTrade
             responseVo.setCode(1);
             return responseVo;
+        //脚本验证成功，即令牌验证成功，继续往下做下单逻辑
         }else {
-            //2. 创建订单、订单项
+            //2. 创建订单、订单项。   先通过createOrderTo方法，取出To需要的memberResponseVo和submitVo中的数据
             OrderCreateTo order =createOrderTo(memberResponseVo,submitVo);
 
-            //3. 验价
+            //3. 验价  允许0.01的误差
             BigDecimal payAmount = order.getOrder().getPayAmount();
             BigDecimal payPrice = submitVo.getPayPrice();
+            //abs求绝对值
             if (Math.abs(payAmount.subtract(payPrice).doubleValue()) < 0.01) {
                 //4. 保存订单
                 saveOrder(order);
+
                 //5. 锁定库存
+                //重新封装后的orderItemVos 只有商品ID 和 锁定数量
                 List<OrderItemVo> orderItemVos = order.getOrderItems().stream().map((item) -> {
                     OrderItemVo orderItemVo = new OrderItemVo();
-                    orderItemVo.setSkuId(item.getSkuId());
-                    orderItemVo.setCount(item.getSkuQuantity());
+                    orderItemVo.setSkuId(item.getSkuId()); //锁定的商品ID
+                    orderItemVo.setCount(item.getSkuQuantity()); //锁几件商品
                     return orderItemVo;
                 }).collect(Collectors.toList());
+                //刚刚抽取的商品Id 和 锁定商品数量  转到专门的lockVo里面
                 WareSkuLockVo lockVo = new WareSkuLockVo();
                 lockVo.setOrderSn(order.getOrder().getOrderSn());
                 lockVo.setLocks(orderItemVos);
+                //锁库存只需要商品Id 和 锁定数量，因此lockVo只有这两个
                 R r = wareFeignService.orderLockStock(lockVo);
                 //5.1 锁定库存成功
                 if (r.getCode()==0){
@@ -206,14 +229,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                         ops.delete(orderItem.getSkuId().toString());
                     }
                     return responseVo;
+
+
                 }else {
                     //5.1 锁定库存失败
                     String msg = (String) r.get("msg");
-                    throw new NoStockException(msg);
+                    throw new NoStockException(msg); //一定要抛异常，抛异常才会让整个事务回滚，所有数据表都清除
                 }
-
+            //验价失败
             }else {
-                //验价失败
                 responseVo.setCode(2);
                 return responseVo;
             }
@@ -332,7 +356,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
             orderItemService.save(orderItemEntity);
         }
     }
-
+    //保存订单
     private void saveOrder(OrderCreateTo orderCreateTo) {
         OrderEntity order = orderCreateTo.getOrder();
         order.setCreateTime(new Date());
@@ -342,13 +366,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
     }
 
     private OrderCreateTo createOrderTo(MemberResponseVo memberResponseVo, OrderSubmitVo submitVo) {
-        //用IdWorker生成订单号
+        //用IdWorker生成订单号，订单号不是普通的随机数，用IdWorker生成的订单号很科学
+        //特别注意：订单号长度很长，Mysql默认的char 32是不够的，要改成char 64
         String orderSn = IdWorker.getTimeId();
-        //构建订单
+        //创建订单
         OrderEntity entity = buildOrder(memberResponseVo, submitVo,orderSn);
         //构建订单项
         List<OrderItemEntity> orderItemEntities = buildOrderItems(orderSn);
-        //计算价格
+        //重新计算价格,用于验价
         compute(entity, orderItemEntities);
         OrderCreateTo createTo = new OrderCreateTo();
         createTo.setOrder(entity);
@@ -366,16 +391,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         //积分
         Integer integrationTotal = 0;
         Integer growthTotal = 0;
-
+        //遍历所有购物项的价格，然后计算每个购物项的总额，积分优惠，打折优惠。。能获得的积分，成长值
         for (OrderItemEntity orderItemEntity : orderItemEntities) {
             total=total.add(orderItemEntity.getRealAmount());
             promotion=promotion.add(orderItemEntity.getPromotionAmount());
             integration=integration.add(orderItemEntity.getIntegrationAmount());
             coupon=coupon.add(orderItemEntity.getCouponAmount());
             integrationTotal += orderItemEntity.getGiftIntegration();
-            growthTotal += orderItemEntity.getGiftGrowth();
+            growthTotal += orderItemEntity.getGiftGrowth(); //交易获得的成长值
         }
-
+        //将计算出的价格，设置进数据库
         entity.setTotalAmount(total);
         entity.setPromotionAmount(promotion);
         entity.setIntegrationAmount(integration);
@@ -407,6 +432,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         //2) 设置sku相关属性
         orderItemEntity.setSkuId(skuId);
         orderItemEntity.setSkuName(item.getTitle());
+        //Spring工具类，将集合属性List<String> skuAttrValues，拆成字符串组合，以;来分割
         orderItemEntity.setSkuAttrsVals(StringUtils.collectionToDelimitedString(item.getSkuAttrValues(), ";"));
         orderItemEntity.setSkuPic(item.getImage());
         orderItemEntity.setSkuPrice(item.getPrice());
@@ -453,9 +479,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         orderEntity.setMemberUsername(memberResponseVo.getUsername());
 
         //3) 获取邮费和收件人信息并设置
+
+        //远程查到收件人地址 和 运费
         FareVo fareVo = wareFeignService.getFare(submitVo.getAddrId());
-        BigDecimal fare = fareVo.getFare();
-        orderEntity.setFreightAmount(fare);
+        BigDecimal fare = fareVo.getFare(); //获取运费
+        orderEntity.setFreightAmount(fare); //设置运费
         MemberAddressVo address = fareVo.getAddress();
         orderEntity.setReceiverName(address.getName());
         orderEntity.setReceiverPhone(address.getPhone());

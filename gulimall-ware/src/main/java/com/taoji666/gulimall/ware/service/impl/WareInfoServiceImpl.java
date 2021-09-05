@@ -1,9 +1,17 @@
 package com.taoji666.gulimall.ware.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
+import com.taoji666.common.utils.R;
 import com.taoji666.gulimall.ware.dao.WareInfoDao;
 import com.taoji666.gulimall.ware.entity.WareInfoEntity;
+import com.taoji666.gulimall.ware.feign.MemberFeignService;
 import com.taoji666.gulimall.ware.service.WareInfoService;
+import com.taoji666.gulimall.ware.vo.FareVo;
+import com.taoji666.gulimall.ware.vo.MemberAddressVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.util.Map;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -16,6 +24,8 @@ import org.springframework.util.StringUtils;
 
 @Service("wareInfoService")
 public class WareInfoServiceImpl extends ServiceImpl<WareInfoDao, WareInfoEntity> implements WareInfoService {
+    @Autowired
+    MemberFeignService memberFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -37,6 +47,30 @@ public class WareInfoServiceImpl extends ServiceImpl<WareInfoDao, WareInfoEntity
         );
 
         return new PageUtils(page);
+    }
+    /*
+    * 根据选择的收货地址，计算运费
+    *
+    * */
+    @Override
+    public FareVo getFare(Long addrId) {
+        FareVo fareVo = new FareVo();
+
+        //通过addrId，远程获取到该收货地址的详细信息
+        R info = memberFeignService.info(addrId);
+        if (info.getCode() == 0) {
+            //将R快速转换成 MemberAddressVo   key就是远程调用时，put进R的对象名称
+            MemberAddressVo address = info.getData("memberReceiveAddress", new TypeReference<MemberAddressVo>() {
+            });
+            fareVo.setAddress(address);
+
+            //假装  电话号的最后两位是邮费
+            String phone = address.getPhone();
+            // substring 截取 手机号码 最后两位数字
+            String fare = phone.substring(phone.length() - 2, phone.length());
+            fareVo.setFare(new BigDecimal(fare));
+        }
+        return fareVo;
     }
 
 }

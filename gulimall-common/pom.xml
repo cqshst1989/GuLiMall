@@ -101,6 +101,14 @@
         </dependency>
         <!--以上，都是为了HttpUtils-->
 
+        <!--全局事务依赖-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+        </dependency>
+
+
+
 
     </dependencies>
     <!--springcloud alibaba  和 springcloud 是两回事，一个有nacos 另一个有OpenFeign-->

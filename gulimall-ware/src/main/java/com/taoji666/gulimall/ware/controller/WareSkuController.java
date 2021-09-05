@@ -4,9 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.taoji666.common.exception.BizCodeEnume;
+import com.taoji666.common.exception.NoStockException;
 import com.taoji666.gulimall.ware.entity.WareSkuEntity;
 import com.taoji666.gulimall.ware.service.WareSkuService;
 import com.taoji666.gulimall.ware.vo.SkuHasStockVo;
+import com.taoji666.gulimall.ware.vo.WareSkuLockVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -116,6 +119,21 @@ public class WareSkuController {
 		wareSkuService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
+    }
+
+    /**
+     * 订单微服务远程调用，，下订单时锁库存
+     * @param lockVo
+     * @return
+     */
+    @RequestMapping("/lock/order")
+    public R orderLockStock(@RequestBody WareSkuLockVo lockVo) { //@RequestBody将提交过来的json转换成对象
+        try {
+            Boolean lock = wareSkuService.orderLockStock(lockVo);
+            return R.ok();
+        } catch (NoStockException e) {
+            return R.error(BizCodeEnume.NO_STOCK_EXCEPTION.getCode(), BizCodeEnume.NO_STOCK_EXCEPTION.getMsg());
+        }
     }
 
 }

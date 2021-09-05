@@ -11,9 +11,8 @@ import lombok.Data;
 /**
  * 订单
  * 
- * @author leifengyang
- * @email leifengyang@gmail.com
- * @date 2019-10-08 09:56:16
+ * @author TaoJi
+ * @email 290691048@qq.com
  */
 @Data
 @TableName("oms_order")

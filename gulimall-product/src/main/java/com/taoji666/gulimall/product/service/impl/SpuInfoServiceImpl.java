@@ -14,6 +14,7 @@ import com.taoji666.gulimall.product.feign.SearchFeignService;
 import com.taoji666.gulimall.product.feign.WareFeignService;
 import com.taoji666.gulimall.product.service.*;
 import com.taoji666.gulimall.product.vo.*;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -95,6 +96,19 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
     * 我们去mysql数据库中将隔离级别改成最低级，允许脏读（没提交的事务也可以读）就可以调试啦
     * set session transaction isolation level Read uncommited;
     * */
+    /**
+     *
+     * 1、Seata控制分布式事务，首先要进行事务操作的给所有微服务的数据库加入db_ undo_ log.sql数据表：如果发生意外，需要回滚的信息会自动记录在该表
+     *  2、下载Seata-server 即TC 事务协调管理器 并安装 启动
+     *    2.1 配置server端的注册中心相关配置registry.conf   主要配置注册中心为nacos，和注册中心地址 为 locast:8848 其他不变
+     *    2.2 配置file.conf 主要配置store模块（事务日志存储在哪里） 修改来存到 mysql，再去 db模块 具体配置mysql地址，账号密码
+     *  3、导入Seata依赖  在common中已经导入
+     *  4、写配置类：配置所有想到用分布式事务的微服务使用Seata DataSourceProxy代理自己的数据源
+     *  5、每个微服务都必须在resources中导入 registry.conf 和 file.conf。在file.conf（搜索guli）中或者spring配置文件中，要修改注册进TC管理器的本微服务名字
+     *        vgroup_mapping.{application.name}-fescar-service-group = "default"
+     * 6、给分布式 事务 的主方法（牵头者：大事务入口）  加上@GlobalTransactional, 主方法调用的远程分支小事务(某个远程方法），只用加上@Transactional即可
+     * */
+    @GlobalTransactional
     @Transactional //需要操作非常多的表，而且数据表中都互相有关系，因此要开启事务
     @Override
     public void saveSpuInfo(SpuSaveVo vo) {
@@ -338,10 +352,21 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
         return new PageUtils(page);
     }
-    /*商品上架，就是给新创建的SkuEsModel赋值，最后放进ES中
-    先检索（从对应数据库中查），后设置原则原则（给SkuEsModel赋值）。
 
-     */
+    //订单微服务远程调用，通过skuId查询spu相关属性并设置
+    @Override
+    public SpuInfoEntity getSpuBySkuId(Long skuId) {
+        SkuInfoEntity skuInfoEntity = skuInfoService.getById(skuId);
+        SpuInfoEntity spu = this.getById(skuInfoEntity.getSpuId());
+        BrandEntity brandEntity = brandService.getById(spu.getBrandId());
+        spu.setBrandName(brandEntity.getName());
+        return spu;
+    }
+
+    /*商品上架，就是给新创建的SkuEsModel赋值，最后放进ES中
+        先检索（从对应数据库中查），后设置原则原则（给SkuEsModel赋值）。
+
+         */
     @Override
     public void up(Long spuId) {
         // 1.1、检索：查出当前spuId对应的所有sku信息,品牌的名字，通过skuInfoService

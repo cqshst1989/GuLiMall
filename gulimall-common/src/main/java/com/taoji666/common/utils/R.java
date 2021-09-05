@@ -41,7 +41,7 @@ public class R extends HashMap<String, Object> {
 		return t;
 	}
 
-	// 利用fastjson进行反序列化，这里使用key，不具体成data，范围更广
+	// 利用fastjson进行反序列化，put进R的是什么，key就是什么，不具体成data，范围更广
 	public <T> T getData(String key, TypeReference<T> typeReference) {
 		// 默认是map
 		Object data = get(key); //

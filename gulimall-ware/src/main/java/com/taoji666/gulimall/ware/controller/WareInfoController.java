@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.taoji666.gulimall.ware.entity.WareInfoEntity;
 import com.taoji666.gulimall.ware.service.WareInfoService;
+import com.taoji666.gulimall.ware.vo.FareVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -92,6 +93,14 @@ public class WareInfoController {
 		wareInfoService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
+    }
+    /**
+    *  根据选择的收货地址 获取运费
+     *
+     * */
+    @RequestMapping("/fare/{addrId}") //相当于@RequestMapping(method = RequestMethod.GET)=@GetMapping
+    public FareVo getFare(@PathVariable("addrId") Long addrId) {
+        return wareInfoService.getFare(addrId);
     }
 
 }

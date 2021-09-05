@@ -1,5 +1,6 @@
 package com.taoji666.gulimall.product.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -11,9 +12,7 @@ import lombok.Data;
 /**
  * spu信息
  * 
- * @author leifengyang
- * @email leifengyang@gmail.com
- * @date 2019-10-01 21:08:49
+ * @author Taoji
  */
 @Data
 @TableName("pms_spu_info")
@@ -57,5 +56,11 @@ public class SpuInfoEntity implements Serializable {
 	 * 
 	 */
 	private Date updateTime;
+
+	//业务上需要临时用一下，数据表里面又没有，由于只用这一项，也没必要搞vo
+	@TableField(exist = false)
+	private String brandName;
+
+
 
 }
