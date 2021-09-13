@@ -22,7 +22,12 @@ public class HelloController {
         orderEntity.setOrderSn(UUID.randomUUID().toString());
         orderEntity.setModifyTime(new Date());
 
+        /*
+        * 传给配置好的交换机，交换机会将信息送去配置好的死信队列，死信队列会再把它push到普通队列
+        *
+        * 形参是 交换机 和 路由键
+        * */
         rabbitTemplate.convertAndSend("order-event-exchange","order.create.order",orderEntity);
-        return "ok";
+        return "ok"; //这里就是响应ok，不是跳去页面@ResponseBody
     }
 }

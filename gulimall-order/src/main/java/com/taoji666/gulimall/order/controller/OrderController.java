@@ -6,11 +6,7 @@ import java.util.Map;
 import com.taoji666.gulimall.order.entity.OrderEntity;
 import com.taoji666.gulimall.order.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.taoji666.common.utils.PageUtils;
 import com.taoji666.common.utils.R;
@@ -20,15 +16,21 @@ import com.taoji666.common.utils.R;
 /**
  * 订单
  *
- * @author leifengyang
- * @email leifengyang@gmail.com
- * @date 2019-10-08 09:56:16
+ * @author TaoJi
+ * @email 290691048@qq.com
+ * @date 2021-09-10 16:11:15
  */
 @RestController
 @RequestMapping("order/order")
 public class OrderController {
     @Autowired
     private OrderService orderService;
+
+    @GetMapping("/status/{orderSn}")
+    public R getOrderStatus(String orderSn){
+        OrderEntity orderEntity = orderService.getOrderByOrderSn(orderSn);
+        return R.ok().setData(orderEntity);
+    }
 
     /**
      * 列表

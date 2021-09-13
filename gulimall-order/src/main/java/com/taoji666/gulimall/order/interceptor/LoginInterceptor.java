@@ -27,6 +27,7 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String requestURI = request.getRequestURI();
+        //对以下路径的URL 直接放行，不拦截
         AntPathMatcher matcher = new AntPathMatcher();
         boolean match1 = matcher.match("/order/order/infoByOrderSn/**", requestURI);
         boolean match2 = matcher.match("/payed/**", requestURI);

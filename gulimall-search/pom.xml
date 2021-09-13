@@ -48,6 +48,13 @@
             <groupId>com.taoji666.gulimall</groupId>
             <artifactId>gulimall-common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <!--common里面有seata，但是本项目不需要seata，有了seata就必须配置，否则启动报错，就只能去除最方便了-->
+                <exclusion>
+                    <groupId>com.alibaba.cloud</groupId>
+                    <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 模板引擎 -->

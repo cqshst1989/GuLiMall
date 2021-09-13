@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.taoji666.common.constant.CartConstant;
 import com.taoji666.common.exception.NoStockException;
 import com.taoji666.common.to.SkuHasStockVo;
+import com.taoji666.common.to.mq.OrderTo;
 import com.taoji666.common.utils.R;
 import com.taoji666.common.vo.MemberResponseVo;
 import com.taoji666.gulimall.order.constant.OrderConstant;
@@ -12,6 +13,7 @@ import com.taoji666.gulimall.order.dao.OrderDao;
 import com.taoji666.gulimall.order.entity.OrderEntity;
 import com.taoji666.gulimall.order.entity.OrderItemEntity;
 import com.taoji666.gulimall.order.entity.PaymentInfoEntity;
+import com.taoji666.gulimall.order.enume.OrderStatusEnum;
 import com.taoji666.gulimall.order.feign.CartFeignService;
 import com.taoji666.gulimall.order.feign.MemberFeignService;
 import com.taoji666.gulimall.order.feign.ProductFeignService;
@@ -23,7 +25,6 @@ import com.taoji666.gulimall.order.service.PaymentInfoService;
 import com.taoji666.gulimall.order.to.OrderCreateTo;
 import com.taoji666.gulimall.order.to.SpuInfoTo;
 import com.taoji666.gulimall.order.vo.*;
-import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -213,14 +214,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                 lockVo.setOrderSn(order.getOrder().getOrderSn());
                 lockVo.setLocks(orderItemVos);
                 //锁库存只需要商品Id 和 锁定数量，因此lockVo只有这两个
-                R r = wareFeignService.orderLockStock(lockVo);
+                R r = wareFeignService.orderLockStock(lockVo); //远程方法用了 兔子MQ,这样即使锁定了库存，客户一直不付钱，兔子可以自行取消库存
                 //5.1 锁定库存成功
                 if (r.getCode()==0){
 //                    int i = 10 / 0;
                     responseVo.setOrder(order.getOrder());
                     responseVo.setCode(0);
 
-                    //发送消息到订单延迟队列，判断过期订单
+                    //发送消息到订单延迟队列，判断过期订单. 发送信息给MQ。
+                    //将消息发送给order-event-exchange交换机，然后交换机沿着order.create.order路由键 送到死信队列order.delay.queue
                     rabbitTemplate.convertAndSend("order-event-exchange","order.create.order",order.getOrder());
 
                     //清除购物车记录

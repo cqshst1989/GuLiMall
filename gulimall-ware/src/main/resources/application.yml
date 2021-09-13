@@ -18,6 +18,15 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
 
+  rabbitmq:
+    host: 127.0.0.1 #docker中的ip地址和端口号
+      username: taoji
+      password: 1234567890
+      listener:
+        simple:
+          acknowledge-mode: manual
+    virtual-host: /
+
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
